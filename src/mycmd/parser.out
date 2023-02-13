@@ -1,0 +1,523 @@
+Created by PLY version 3.11 (http://www.dabeaz.com/ply)
+
+Grammar
+
+Rule 0     S' -> start
+Rule 1     start -> command
+Rule 2     start -> label
+Rule 3     start -> start command
+Rule 4     start -> start label
+Rule 5     label -> iKEYWORD :
+Rule 6     command -> iKEYWORD
+Rule 7     command -> iKEYWORD args
+Rule 8     command -> iKEYWORD kwargs
+Rule 9     command -> iKEYWORD args , kwargs
+Rule 10    args -> value
+Rule 11    args -> args , value
+Rule 12    value -> iINTEGER
+Rule 13    value -> iFLOAT
+Rule 14    value -> TRUE
+Rule 15    value -> FALSE
+Rule 16    value -> NULL
+Rule 17    value -> str
+Rule 18    value -> keyword
+Rule 19    keyword -> iKEYWORD
+Rule 20    keyword -> keyword . iKEYWORD
+Rule 21    kwarg -> iKEYWORD = value
+Rule 22    kwargs -> kwarg
+Rule 23    kwargs -> kwargs , kwarg
+Rule 24    str -> iLBRACE chars iRBRACE
+Rule 25    chars -> char
+Rule 26    chars -> chars char
+Rule 27    char -> iCHAR
+Rule 28    char -> iESCAPE iESCAPE_CHAR
+
+Terminals, with rules where they appear
+
+,                    : 9 11 23
+.                    : 20
+:                    : 5
+=                    : 21
+FALSE                : 15
+NULL                 : 16
+TRUE                 : 14
+error                : 
+iCHAR                : 27
+iESCAPE              : 28
+iESCAPE_CHAR         : 28
+iFLOAT               : 13
+iINTEGER             : 12
+iKEYWORD             : 5 6 7 8 9 19 20 21
+iLBRACE              : 24
+iRBRACE              : 24
+
+Nonterminals, with rules where they appear
+
+args                 : 7 9 11
+char                 : 25 26
+chars                : 24 26
+command              : 1 3
+keyword              : 18 20
+kwarg                : 22 23
+kwargs               : 8 9 23
+label                : 2 4
+start                : 3 4 0
+str                  : 17
+value                : 10 11 21
+
+Parsing method: LALR
+
+state 0
+
+    (0) S' -> . start
+    (1) start -> . command
+    (2) start -> . label
+    (3) start -> . start command
+    (4) start -> . start label
+    (6) command -> . iKEYWORD
+    (7) command -> . iKEYWORD args
+    (8) command -> . iKEYWORD kwargs
+    (9) command -> . iKEYWORD args , kwargs
+    (5) label -> . iKEYWORD :
+
+    iKEYWORD        shift and go to state 4
+
+    start                          shift and go to state 1
+    command                        shift and go to state 2
+    label                          shift and go to state 3
+
+state 1
+
+    (0) S' -> start .
+    (3) start -> start . command
+    (4) start -> start . label
+    (6) command -> . iKEYWORD
+    (7) command -> . iKEYWORD args
+    (8) command -> . iKEYWORD kwargs
+    (9) command -> . iKEYWORD args , kwargs
+    (5) label -> . iKEYWORD :
+
+    iKEYWORD        shift and go to state 4
+
+    command                        shift and go to state 5
+    label                          shift and go to state 6
+
+state 2
+
+    (1) start -> command .
+
+    iKEYWORD        reduce using rule 1 (start -> command .)
+    $end            reduce using rule 1 (start -> command .)
+
+
+state 3
+
+    (2) start -> label .
+
+    iKEYWORD        reduce using rule 2 (start -> label .)
+    $end            reduce using rule 2 (start -> label .)
+
+
+state 4
+
+    (6) command -> iKEYWORD .
+    (7) command -> iKEYWORD . args
+    (8) command -> iKEYWORD . kwargs
+    (9) command -> iKEYWORD . args , kwargs
+    (5) label -> iKEYWORD . :
+    (10) args -> . value
+    (11) args -> . args , value
+    (22) kwargs -> . kwarg
+    (23) kwargs -> . kwargs , kwarg
+    (12) value -> . iINTEGER
+    (13) value -> . iFLOAT
+    (14) value -> . TRUE
+    (15) value -> . FALSE
+    (16) value -> . NULL
+    (17) value -> . str
+    (18) value -> . keyword
+    (21) kwarg -> . iKEYWORD = value
+    (24) str -> . iLBRACE chars iRBRACE
+    (19) keyword -> . iKEYWORD
+    (20) keyword -> . keyword . iKEYWORD
+
+  ! shift/reduce conflict for iKEYWORD resolved as shift
+    $end            reduce using rule 6 (command -> iKEYWORD .)
+    :               shift and go to state 10
+    iINTEGER        shift and go to state 13
+    iFLOAT          shift and go to state 14
+    TRUE            shift and go to state 15
+    FALSE           shift and go to state 16
+    NULL            shift and go to state 17
+    iKEYWORD        shift and go to state 7
+    iLBRACE         shift and go to state 20
+
+  ! iKEYWORD        [ reduce using rule 6 (command -> iKEYWORD .) ]
+
+    args                           shift and go to state 8
+    kwargs                         shift and go to state 9
+    value                          shift and go to state 11
+    kwarg                          shift and go to state 12
+    str                            shift and go to state 18
+    keyword                        shift and go to state 19
+
+state 5
+
+    (3) start -> start command .
+
+    iKEYWORD        reduce using rule 3 (start -> start command .)
+    $end            reduce using rule 3 (start -> start command .)
+
+
+state 6
+
+    (4) start -> start label .
+
+    iKEYWORD        reduce using rule 4 (start -> start label .)
+    $end            reduce using rule 4 (start -> start label .)
+
+
+state 7
+
+    (21) kwarg -> iKEYWORD . = value
+    (19) keyword -> iKEYWORD .
+
+    =               shift and go to state 21
+    .               reduce using rule 19 (keyword -> iKEYWORD .)
+    ,               reduce using rule 19 (keyword -> iKEYWORD .)
+    iKEYWORD        reduce using rule 19 (keyword -> iKEYWORD .)
+    $end            reduce using rule 19 (keyword -> iKEYWORD .)
+
+
+state 8
+
+    (7) command -> iKEYWORD args .
+    (9) command -> iKEYWORD args . , kwargs
+    (11) args -> args . , value
+
+    iKEYWORD        reduce using rule 7 (command -> iKEYWORD args .)
+    $end            reduce using rule 7 (command -> iKEYWORD args .)
+    ,               shift and go to state 22
+
+
+state 9
+
+    (8) command -> iKEYWORD kwargs .
+    (23) kwargs -> kwargs . , kwarg
+
+    iKEYWORD        reduce using rule 8 (command -> iKEYWORD kwargs .)
+    $end            reduce using rule 8 (command -> iKEYWORD kwargs .)
+    ,               shift and go to state 23
+
+
+state 10
+
+    (5) label -> iKEYWORD : .
+
+    iKEYWORD        reduce using rule 5 (label -> iKEYWORD : .)
+    $end            reduce using rule 5 (label -> iKEYWORD : .)
+
+
+state 11
+
+    (10) args -> value .
+
+    ,               reduce using rule 10 (args -> value .)
+    iKEYWORD        reduce using rule 10 (args -> value .)
+    $end            reduce using rule 10 (args -> value .)
+
+
+state 12
+
+    (22) kwargs -> kwarg .
+
+    ,               reduce using rule 22 (kwargs -> kwarg .)
+    iKEYWORD        reduce using rule 22 (kwargs -> kwarg .)
+    $end            reduce using rule 22 (kwargs -> kwarg .)
+
+
+state 13
+
+    (12) value -> iINTEGER .
+
+    ,               reduce using rule 12 (value -> iINTEGER .)
+    iKEYWORD        reduce using rule 12 (value -> iINTEGER .)
+    $end            reduce using rule 12 (value -> iINTEGER .)
+
+
+state 14
+
+    (13) value -> iFLOAT .
+
+    ,               reduce using rule 13 (value -> iFLOAT .)
+    iKEYWORD        reduce using rule 13 (value -> iFLOAT .)
+    $end            reduce using rule 13 (value -> iFLOAT .)
+
+
+state 15
+
+    (14) value -> TRUE .
+
+    ,               reduce using rule 14 (value -> TRUE .)
+    iKEYWORD        reduce using rule 14 (value -> TRUE .)
+    $end            reduce using rule 14 (value -> TRUE .)
+
+
+state 16
+
+    (15) value -> FALSE .
+
+    ,               reduce using rule 15 (value -> FALSE .)
+    iKEYWORD        reduce using rule 15 (value -> FALSE .)
+    $end            reduce using rule 15 (value -> FALSE .)
+
+
+state 17
+
+    (16) value -> NULL .
+
+    ,               reduce using rule 16 (value -> NULL .)
+    iKEYWORD        reduce using rule 16 (value -> NULL .)
+    $end            reduce using rule 16 (value -> NULL .)
+
+
+state 18
+
+    (17) value -> str .
+
+    ,               reduce using rule 17 (value -> str .)
+    iKEYWORD        reduce using rule 17 (value -> str .)
+    $end            reduce using rule 17 (value -> str .)
+
+
+state 19
+
+    (18) value -> keyword .
+    (20) keyword -> keyword . . iKEYWORD
+
+    ,               reduce using rule 18 (value -> keyword .)
+    iKEYWORD        reduce using rule 18 (value -> keyword .)
+    $end            reduce using rule 18 (value -> keyword .)
+    .               shift and go to state 24
+
+
+state 20
+
+    (24) str -> iLBRACE . chars iRBRACE
+    (25) chars -> . char
+    (26) chars -> . chars char
+    (27) char -> . iCHAR
+    (28) char -> . iESCAPE iESCAPE_CHAR
+
+    iCHAR           shift and go to state 27
+    iESCAPE         shift and go to state 28
+
+    chars                          shift and go to state 25
+    char                           shift and go to state 26
+
+state 21
+
+    (21) kwarg -> iKEYWORD = . value
+    (12) value -> . iINTEGER
+    (13) value -> . iFLOAT
+    (14) value -> . TRUE
+    (15) value -> . FALSE
+    (16) value -> . NULL
+    (17) value -> . str
+    (18) value -> . keyword
+    (24) str -> . iLBRACE chars iRBRACE
+    (19) keyword -> . iKEYWORD
+    (20) keyword -> . keyword . iKEYWORD
+
+    iINTEGER        shift and go to state 13
+    iFLOAT          shift and go to state 14
+    TRUE            shift and go to state 15
+    FALSE           shift and go to state 16
+    NULL            shift and go to state 17
+    iLBRACE         shift and go to state 20
+    iKEYWORD        shift and go to state 29
+
+    value                          shift and go to state 30
+    str                            shift and go to state 18
+    keyword                        shift and go to state 19
+
+state 22
+
+    (9) command -> iKEYWORD args , . kwargs
+    (11) args -> args , . value
+    (22) kwargs -> . kwarg
+    (23) kwargs -> . kwargs , kwarg
+    (12) value -> . iINTEGER
+    (13) value -> . iFLOAT
+    (14) value -> . TRUE
+    (15) value -> . FALSE
+    (16) value -> . NULL
+    (17) value -> . str
+    (18) value -> . keyword
+    (21) kwarg -> . iKEYWORD = value
+    (24) str -> . iLBRACE chars iRBRACE
+    (19) keyword -> . iKEYWORD
+    (20) keyword -> . keyword . iKEYWORD
+
+    iINTEGER        shift and go to state 13
+    iFLOAT          shift and go to state 14
+    TRUE            shift and go to state 15
+    FALSE           shift and go to state 16
+    NULL            shift and go to state 17
+    iKEYWORD        shift and go to state 7
+    iLBRACE         shift and go to state 20
+
+    kwargs                         shift and go to state 31
+    value                          shift and go to state 32
+    kwarg                          shift and go to state 12
+    str                            shift and go to state 18
+    keyword                        shift and go to state 19
+
+state 23
+
+    (23) kwargs -> kwargs , . kwarg
+    (21) kwarg -> . iKEYWORD = value
+
+    iKEYWORD        shift and go to state 34
+
+    kwarg                          shift and go to state 33
+
+state 24
+
+    (20) keyword -> keyword . . iKEYWORD
+
+    iKEYWORD        shift and go to state 35
+
+
+state 25
+
+    (24) str -> iLBRACE chars . iRBRACE
+    (26) chars -> chars . char
+    (27) char -> . iCHAR
+    (28) char -> . iESCAPE iESCAPE_CHAR
+
+    iRBRACE         shift and go to state 36
+    iCHAR           shift and go to state 27
+    iESCAPE         shift and go to state 28
+
+    char                           shift and go to state 37
+
+state 26
+
+    (25) chars -> char .
+
+    iRBRACE         reduce using rule 25 (chars -> char .)
+    iCHAR           reduce using rule 25 (chars -> char .)
+    iESCAPE         reduce using rule 25 (chars -> char .)
+
+
+state 27
+
+    (27) char -> iCHAR .
+
+    iRBRACE         reduce using rule 27 (char -> iCHAR .)
+    iCHAR           reduce using rule 27 (char -> iCHAR .)
+    iESCAPE         reduce using rule 27 (char -> iCHAR .)
+
+
+state 28
+
+    (28) char -> iESCAPE . iESCAPE_CHAR
+
+    iESCAPE_CHAR    shift and go to state 38
+
+
+state 29
+
+    (19) keyword -> iKEYWORD .
+
+    .               reduce using rule 19 (keyword -> iKEYWORD .)
+    ,               reduce using rule 19 (keyword -> iKEYWORD .)
+    iKEYWORD        reduce using rule 19 (keyword -> iKEYWORD .)
+    $end            reduce using rule 19 (keyword -> iKEYWORD .)
+
+
+state 30
+
+    (21) kwarg -> iKEYWORD = value .
+
+    ,               reduce using rule 21 (kwarg -> iKEYWORD = value .)
+    iKEYWORD        reduce using rule 21 (kwarg -> iKEYWORD = value .)
+    $end            reduce using rule 21 (kwarg -> iKEYWORD = value .)
+
+
+state 31
+
+    (9) command -> iKEYWORD args , kwargs .
+    (23) kwargs -> kwargs . , kwarg
+
+    iKEYWORD        reduce using rule 9 (command -> iKEYWORD args , kwargs .)
+    $end            reduce using rule 9 (command -> iKEYWORD args , kwargs .)
+    ,               shift and go to state 23
+
+
+state 32
+
+    (11) args -> args , value .
+
+    ,               reduce using rule 11 (args -> args , value .)
+    iKEYWORD        reduce using rule 11 (args -> args , value .)
+    $end            reduce using rule 11 (args -> args , value .)
+
+
+state 33
+
+    (23) kwargs -> kwargs , kwarg .
+
+    ,               reduce using rule 23 (kwargs -> kwargs , kwarg .)
+    iKEYWORD        reduce using rule 23 (kwargs -> kwargs , kwarg .)
+    $end            reduce using rule 23 (kwargs -> kwargs , kwarg .)
+
+
+state 34
+
+    (21) kwarg -> iKEYWORD . = value
+
+    =               shift and go to state 21
+
+
+state 35
+
+    (20) keyword -> keyword . iKEYWORD .
+
+    .               reduce using rule 20 (keyword -> keyword . iKEYWORD .)
+    ,               reduce using rule 20 (keyword -> keyword . iKEYWORD .)
+    iKEYWORD        reduce using rule 20 (keyword -> keyword . iKEYWORD .)
+    $end            reduce using rule 20 (keyword -> keyword . iKEYWORD .)
+
+
+state 36
+
+    (24) str -> iLBRACE chars iRBRACE .
+
+    ,               reduce using rule 24 (str -> iLBRACE chars iRBRACE .)
+    iKEYWORD        reduce using rule 24 (str -> iLBRACE chars iRBRACE .)
+    $end            reduce using rule 24 (str -> iLBRACE chars iRBRACE .)
+
+
+state 37
+
+    (26) chars -> chars char .
+
+    iRBRACE         reduce using rule 26 (chars -> chars char .)
+    iCHAR           reduce using rule 26 (chars -> chars char .)
+    iESCAPE         reduce using rule 26 (chars -> chars char .)
+
+
+state 38
+
+    (28) char -> iESCAPE iESCAPE_CHAR .
+
+    iRBRACE         reduce using rule 28 (char -> iESCAPE iESCAPE_CHAR .)
+    iCHAR           reduce using rule 28 (char -> iESCAPE iESCAPE_CHAR .)
+    iESCAPE         reduce using rule 28 (char -> iESCAPE iESCAPE_CHAR .)
+
+WARNING: 
+WARNING: Conflicts:
+WARNING: 
+WARNING: shift/reduce conflict for iKEYWORD in state 4 resolved as shift
