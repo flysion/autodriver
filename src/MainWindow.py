@@ -223,9 +223,9 @@ class MainWindow(QtWidgets.QMainWindow):
             else:
                 values[elementName.id()] = cmd.Rect(item.parent().graphicsView().image(), rect.normalized().toRect())
 
-        def reader(filename: EditorTreeWidgetItemFile, files=files):
-            if filename.name().id() in files:
-                return files[filename.name().id()]
+        def reader(file: EditorTreeWidgetItemFile, files=files):
+            if file.name().id() in files:
+                return files[file.name().id()]
             # TODO 文件不存在
 
         thread.async_(cmd.run, self._device, values, reader, editorTreeWidgetItem)

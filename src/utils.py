@@ -56,3 +56,19 @@ def qimage2opencv(qimage: QtGui.QImage):
             cvimage[x, y, 1] = g
             cvimage[x, y, 2] = b
     return cvimage
+
+
+def qimage_sameness(image1: QtGui.QImage, image2: QtGui.QImage) -> int:
+    a = 0
+    b = 0
+
+    for x in range(image1.width()):
+        for y in range(image1.height()):
+            color1: QtGui.QColor = image1.pixelColor(x, y)
+            color2: QtGui.QColor = image2.pixelColor(x, y)
+            if color1.red() == color2.red() and color1.green() == color2.green() and color1.blue() == color2.blue():
+                a += 1
+            else:
+                b += 1
+
+    return int(a / (a + b) * 100)

@@ -7,9 +7,9 @@ _global_commands = {}
 
 
 class CommandNotFound(Exception):
-    def __init__(self, file, line):
+    def __init__(self, file, fragment):
         self.file = file
-        self.line = line
+        self.fragment = fragment
 
 
 class ValueNotFound(Exception):
@@ -18,32 +18,33 @@ class ValueNotFound(Exception):
         self.arg = arg
 
 
-def run(reader, mainFile, context: Context = None, values: dict = {}, commands: Mapping[str, Callable] = {}, exec_callback=None, loop=True) -> int:
+def run(mainFile, reader, context: Context, values: dict = {}, commands: Mapping[str, Callable] = {}, exec_callback=None, loop=True) -> int:
     _exitcode: int = None
-    _parse_cache: dict = {}
+    _cache: dict = {}
 
     def exit(exitcode: int = 0):
         nonlocal _exitcode
         _exitcode = exitcode
 
-    def readFile(file):
-        nonlocal _parse_cache
-        fileid = id(file)
-        if fileid not in _parse_cache:
-            _parse_cache[fileid] = parser.parse(str(reader(file)))
-        return _parse_cache[fileid]
+    def read(file):
+        nonlocal _cache
+        key = id(file)
+        if key not in _cache:
+            _cache[key] = parser.parse(str(reader(file)))
+        return _cache[key]
 
     def runFile(file):
-        _file_object: list = readFile(file)
+        _fragments: list = read(file)
         _index: int = 0
         _labels = {}
+        _values = {}  # TODO
 
-        for index in range(len(_file_object)):
-            item = _file_object[index]
-            if item['type'] == 'label':
-                _labels[item['name']] = (index, item)
+        for index in range(len(_fragments)):
+            fragment = _fragments[index]
+            if fragment['type'] == 'label':
+                _labels[fragment['name']] = (index, fragment)
 
-        _values = {**_labels, **values}
+        _values = {**values, **_values, **_labels}
 
         def goto(label):
             nonlocal _index
@@ -72,34 +73,34 @@ def run(reader, mainFile, context: Context = None, values: dict = {}, commands: 
             else:
                 pass
 
-        context.load = runFile
+        context.run = runFile
         context.goto = goto
         context.exit = exit
 
         _commands = dict(commands, **_global_commands, **{
-            'load': lambda context, file: runFile(file),
+            'run': lambda context, file: runFile(file),
             'goto': lambda context, label: goto(label),
             'exit': lambda context, exitcode: exit(exitcode),
         })
 
         while _exitcode is None:
-            if _index >= len(_file_object):
+            if _index >= len(_fragments):
                 break
 
-            item = _file_object[_index]
+            fragment = _fragments[_index]
 
-            if item['type'] == 'command':  # 指令
-                name = item['name']
+            if fragment['type'] == 'command':  # 指令
+                name = fragment['name']
                 if name not in _commands:
-                    raise CommandNotFound(file, item)
+                    raise CommandNotFound(file, fragment)
                 fn = _commands[name]
 
                 args = [context]
-                for arg in item['args']:
+                for arg in fragment['args']:
                     args.append(value(arg))
 
                 kwargs = {}
-                for kwarg in item['kwargs']:
+                for kwarg in fragment['kwargs']:
                     kwargs[kwarg['name']] = value(kwarg['value'])
 
                 result = fn(*args, **kwargs)
@@ -109,10 +110,10 @@ def run(reader, mainFile, context: Context = None, values: dict = {}, commands: 
             _index += 1
 
             if exec_callback is not None:
-                exec_callback(file, item, result)
+                exec_callback(file, fragment, result)
 
     while True:
-        runFile(mainFile)
+        load(mainFile)
         if _exitcode is not None or not loop:
             break
 
