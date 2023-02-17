@@ -1,6 +1,5 @@
 from PySide6 import QtCore, QtWidgets, QtGui
 
-from EditorLineno import EditorLinenoWidget
 from EditorTextEdit import EditorTextEdit
 from typing import TYPE_CHECKING
 
@@ -19,10 +18,6 @@ class EditorTabView(QtWidgets.QWidget):
         self._layout.setContentsMargins(0, 0, 0, 0)
         self._layout.setSpacing(0)
         self.setLayout(self._layout)
-
-        self._linenoWidget = EditorLinenoWidget()
-        self._linenoWidget.setLineCount(1)
-        self._layout.addWidget(self._linenoWidget, 0, 0)
 
         self._font = QtGui.QFont()
         self._font.setPixelSize(15)
@@ -45,5 +40,4 @@ class EditorTabView(QtWidgets.QWidget):
         return self._treeItem
 
     def on_editor_textChanged(self):
-        self._linenoWidget.setLineCount(self._textEdit.document().lineCount())
         self.textChanged.emit(self._textEdit.toPlainText())

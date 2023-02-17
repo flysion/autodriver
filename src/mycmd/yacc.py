@@ -34,7 +34,7 @@ def p_command(p):
     """
     command : iKEYWORD
     """
-    p[0] = {'type': 'command', 'name': p[1], 'args': [], 'lineno': p.lineno(1), 'pos': p.lexpos(1)}
+    p[0] = {'type': 'command', 'name': p[1], 'args': [], 'kwargs': [], 'lineno': p.lineno(1), 'pos': p.lexpos(1)}
 
 
 def p_command_1(p):

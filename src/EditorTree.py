@@ -1,4 +1,4 @@
-from typing import Callable, TYPE_CHECKING
+from typing import Callable, TYPE_CHECKING, Union
 
 from PySide6 import QtWidgets, QtGui, QtCore
 
@@ -22,6 +22,8 @@ class EditorTreeWidgetItemNameChangeEvent:
 
 
 class EditorTreeWidgetItemWidget(QtWidgets.QWidget):
+    mouseDoubleClicked = QtCore.Signal(QtGui.QMouseEvent)
+
     def __init__(self, name: Name):
         super(EditorTreeWidgetItemWidget, self).__init__()
 
@@ -67,7 +69,7 @@ class EditorTreeWidgetItemWidget(QtWidgets.QWidget):
         return super(EditorTreeWidgetItemWidget, self).eventFilter(o, e)
 
     def mouseDoubleClickEvent(self, e: QtGui.QMouseEvent) -> None:
-        self.setModifyMode()
+        self.mouseDoubleClicked.emit(e)
 
     def setModifyMode(self, modifiable=True):
         if modifiable:
@@ -213,7 +215,7 @@ class EditorTreeWidget(QtWidgets.QTreeWidget):
             item.parent().removeChild(item)
 
     def on_customContextMenuRequested(self, pos: QtCore.QPoint):
-        item = self.itemAt(pos)
+        item: Union[None, EditorTreeWidgetItemWidgetFolder, EditorTreeWidgetItemWidgetFile] = self.itemAt(pos)
         widget = self.itemWidget(item, 0)
 
         if item is None:
@@ -238,23 +240,30 @@ class EditorTreeWidget(QtWidgets.QTreeWidget):
             addFileOnFolderAction = QtGui.QAction("添加功能", menu)
             addFileOnFolderAction.triggered.connect(lambda checked=False, item=item: self.addFileOnFolderTriggered.emit(item))
             menu.addAction(addFileOnFolderAction)
+            changeNameAction = QtGui.QAction("重命名", menu)
+            changeNameAction.triggered.connect(lambda checked=False, widget=widget: widget.setModifyMode())
+            menu.addAction(changeNameAction)
             deleteFolderAction = QtGui.QAction("删除", menu)
             deleteFolderAction.triggered.connect(lambda checked=False, item=item: self.deleteFolderTriggered.emit(item))
             menu.addAction(deleteFolderAction)
         elif isinstance(widget, EditorTreeWidgetItemWidgetFile):
             menu = QtWidgets.QMenu()
-            openFileAction = QtGui.QAction("打开", menu)
-            openFileAction.triggered.connect(lambda checked=False, item=item: self.openFileTriggered.emit(item))
-            menu.addAction(openFileAction)
             runFileAction = QtGui.QAction("运行", menu)
             runFileAction.triggered.connect(lambda checked=False, item=item: self.runFileTriggered.emit(item))
             menu.addAction(runFileAction)
+            changeNameAction = QtGui.QAction("重命名", menu)
+            changeNameAction.triggered.connect(lambda checked=False, widget=widget: widget.setModifyMode())
+            menu.addAction(changeNameAction)
             deleteFileAction = QtGui.QAction("删除", menu)
             deleteFileAction.triggered.connect(lambda checked=False, item=item: self.deleteFileTriggered.emit(item))
             menu.addAction(deleteFileAction)
         else:
             return
         menu.exec(QtGui.QCursor.pos())
+
+    def expand(self, item):
+        self.expandItem()
+        self.collapseItem()
 
     def addFolder(self, name: Name, folder: EditorTreeWidgetItem = None) -> EditorTreeWidgetItem:
         item = self.createFolder(name, folder)
@@ -271,6 +280,7 @@ class EditorTreeWidget(QtWidgets.QTreeWidget):
 
         widget = EditorTreeWidgetItemWidgetFolder(name)
         widget.nameChange.connect(lambda event, item=item: self.folderNameChanged.emit(item, event))
+        widget.mouseDoubleClicked.connect(lambda event, item=item: self.collapseItem(item) if item.isExpanded() else self.expandItem(item))
         self.setItemWidget(item, 0, widget)
 
         return item
@@ -290,6 +300,7 @@ class EditorTreeWidget(QtWidgets.QTreeWidget):
 
         widget = EditorTreeWidgetItemWidgetFile(name)
         widget.nameChange.connect(lambda event, item=item: self.fileNameChanged.emit(item, event))
+        widget.mouseDoubleClicked.connect(lambda event, item=item: self.openFileTriggered.emit(item))
         self.setItemWidget(item, 0, widget)
 
         return item
