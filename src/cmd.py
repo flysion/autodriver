@@ -34,6 +34,42 @@ class Rect:
 
 
 @mycmd.command()
+def run_if(context: mycmd.Context, pos: Rect, file, same: int = 80):
+    if screen_sameness(context['screen'], pos) >= same:
+        context.load(file)
+
+
+@mycmd.command()
+def run_unless(context: mycmd.Context, pos: Rect, file, same: int = 80):
+    if screen_sameness(context['screen'], pos) < same:
+        context.load(file)
+
+
+@mycmd.command()
+def exit_if(context: mycmd.Context, pos: Rect, code: int = 0, same: int = 80):
+    if screen_sameness(context['screen'], pos) >= same:
+        context.exit(code)
+
+
+@mycmd.command()
+def exit_unless(context: mycmd.Context, pos: Rect, code: int = 0, same: int = 80):
+    if screen_sameness(context['screen'], pos) < same:
+        context.exit(code)
+
+
+@mycmd.command()
+def goto_if(context: mycmd.Context, pos: Rect, label: mycmd.Label, same: int = 80):
+    if screen_sameness(context['screen'], pos) >= same:
+        context.goto(label)
+
+
+@mycmd.command()
+def goto_unless(context: mycmd.Context, pos: Rect, label: mycmd.Label, same: int = 80):
+    if screen_sameness(context['screen'], pos) < same:
+        context.goto(label)
+
+
+@mycmd.command()
 def wait(context: mycmd.Context, ms: int):
     time.sleep(ms / 1000)
 
@@ -51,15 +87,15 @@ def wait_unless(context: mycmd.Context, pos: Rect, same: int = 80, ms: int = 300
 
 
 @mycmd.command()
-def goto_if(context: mycmd.Context, pos: Rect, label: mycmd.Label, same: int = 80):
-    if screen_sameness(context['screen'], pos) >= same:
-        context.goto(label)
+def refresh_if(context: mycmd.Context, pos: Rect, same: int = 80, ms: int = 300):
+    if screen_sameness(context.refresh(), pos) >= same:
+        time.sleep(ms / 1000)
 
 
 @mycmd.command()
-def goto_unless(context: mycmd.Context, pos: Rect, label: mycmd.Label, same: int = 80):
-    if screen_sameness(context['screen'], pos) < same:
-        context.goto(label)
+def refresh_unless(context: mycmd.Context, pos: Rect, same: int = 80, ms: int = 300):
+    if screen_sameness(context.refresh(), pos) < same:
+        time.sleep(ms / 1000)
 
 
 @mycmd.command()
