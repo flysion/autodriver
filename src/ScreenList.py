@@ -1,5 +1,6 @@
-from PySide6 import QtWidgets, QtGui, QtCore
 from typing import TYPE_CHECKING
+
+from PySide6 import QtWidgets, QtGui, QtCore
 
 
 class ScreenListWidgetItem(QtWidgets.QListWidgetItem):
@@ -26,10 +27,7 @@ class ScreenListWidgetItem(QtWidgets.QListWidgetItem):
         return self._treeItem
 
     def setImage(self, image: QtGui.QImage):
-        if image.height() > image.width():
-            image = image.scaledToHeight(80)
-        else:
-            image = image.scaledToHeight(80)
+        image = image.scaledToHeight(120)
         self.setIcon(QtGui.QIcon(QtGui.QPixmap.fromImage(image)))
         self.setSizeHint(QtCore.QSize(image.width(), image.height()))
 
@@ -37,5 +35,4 @@ class ScreenListWidgetItem(QtWidgets.QListWidgetItem):
 class ScreenListWidget(QtWidgets.QListWidget):
     def __init__(self, parent):
         super(ScreenListWidget, self).__init__(parent)
-        self.setSpacing(5)
         self.setFrameShape(QtWidgets.QFrame.Shape.NoFrame)  # 去掉边框

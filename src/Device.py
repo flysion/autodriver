@@ -7,10 +7,13 @@ class Device:
     def click(self, x, y):
         pass
 
-    def move(self, x1, y1, x2, y2):
+    def touch(self, x1, y1, x2, y2):
         pass
 
     def screen(self) -> QtGui.QImage:
+        pass
+
+    def input(self, text):
         pass
 
 
@@ -32,12 +35,22 @@ class ADB(Device):
 
         return command + list(args)
 
+    def input(self, text: str):
+        """
+        输入中文的解决方案：https://github.com/senzhk/ADBKeyBoard
+        :param text:
+        :return:
+        """
+        code, out = subprocess.getstatusoutput(self.build_command('shell', 'input', 'text', text))
+        if code != 0:
+            raise ADBException(out)
+
     def click(self, x, y):
         code, out = subprocess.getstatusoutput(self.build_command('shell', 'input', 'tap', str(x), str(y)))
         if code != 0:
             raise ADBException(out)
 
-    def move(self, x1, y1, x2, y2):
+    def touch(self, x1, y1, x2, y2):
         code, out = subprocess.getstatusoutput(self.build_command('shell', 'input', 'swipe', str(x1), str(y1), str(x2), str(y2)))
         if code != 0:
             raise ADBException(out)

@@ -5,17 +5,17 @@ from typing import Union, Tuple
 
 from PySide6 import QtWidgets, QtGui, QtCore
 
-import cmd
-import thread
+import executor
 from Counter import Counter
 from Device import Device
 from EditorTabView import EditorTabView
 from EditorTree import EditorTreeWidgetItemFile, EditorTreeWidgetItemFolder, EditorTreeWidgetItemNameChangeEvent
+from MainWindowUI import Ui_MainWindow
 from Name import Name
+from RunDialog import RunDialog
 from ScreenGraphics import ScreenGraphicsView, ScreenGraphicsItemRect, ScreenGraphicsItemPoint
 from ScreenList import ScreenListWidgetItem
 from ScreenTree import ScreenTreeWidgetItemGroup, ScreenTreeWidgetItemScene, ScreenTreeWidgetItemElement, ScreenTreeWidgetItem, ScreenTreeWidgetItemNameChangeEvent
-from ui.MainWindow import Ui_MainWindow
 
 ScreenGraphicsItem = Union[ScreenGraphicsItemRect, ScreenGraphicsItemPoint]
 
@@ -32,6 +32,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.ui.openMenu.triggered.connect(self.on_openMenu_triggered)
         self.ui.saveMenu.triggered.connect(self.on_saveMenu_triggered)
+        self.ui.newMenu.triggered.connect(self.on_newMenu_triggered)
 
         self.ui.screenListWidget.currentItemChanged.connect(self.on_screenListWidget_currentItemChanged)
 
@@ -70,13 +71,16 @@ class MainWindow(QtWidgets.QMainWindow):
                 screenTreeWidgetItemScene = screenTreeWidgetItemGroup.child(s)
                 screenImageBuffer = QtCore.QBuffer()
                 screenImageBuffer.open(QtCore.QIODevice.OpenModeFlag.ReadWrite)
-                screenTreeWidgetItemScene.graphicsView().image().save(screenImageBuffer, "png")
+                screenTreeWidgetItemScene.graphicsView().sceneImage().save(screenImageBuffer, "png")
                 sceneItem = dict(name=screenTreeWidgetItemScene.name(), image=screenImageBuffer.data(), children=[])
                 for j in range(screenTreeWidgetItemScene.childCount()):
                     screenTreeWidgetItemElement = screenTreeWidgetItemScene.child(j)
-                    type = 1 if isinstance(screenTreeWidgetItemElement.graphicsItem(), ScreenGraphicsItemRect) else 2
-                    rect = screenTreeWidgetItemElement.graphicsItem().mapRectToScene(screenTreeWidgetItemElement.graphicsItem().rect().normalized())
-                    elementItem = dict(name=screenTreeWidgetItemElement.name(), type=type, rect=(rect.x(), rect.y(), rect.width(), rect.height()))
+                    if isinstance(screenTreeWidgetItemElement.graphicsItem(), ScreenGraphicsItemRect):
+                        rect = screenTreeWidgetItemElement.graphicsItem().mapRectToScene(screenTreeWidgetItemElement.graphicsItem().rect())
+                        elementItem = dict(name=screenTreeWidgetItemElement.name(), type=1, rect=(rect.x(), rect.y(), rect.width(), rect.height()))
+                    else:
+                        point = screenTreeWidgetItemElement.graphicsItem().mapToScene(screenTreeWidgetItemElement.graphicsItem().rect().center())
+                        elementItem = dict(name=screenTreeWidgetItemElement.name(), type=2, point=(point.x(), point.y()))
                     sceneItem['children'].append(elementItem)
                 groupItem['children'].append(sceneItem)
             screenTreeItems.append(groupItem)
@@ -107,11 +111,12 @@ class MainWindow(QtWidgets.QMainWindow):
                 image = QtGui.QImage.fromData(sceneItem['image'])
                 screenTreeWidgetItemScene, screenGraphicsView, screenListWidgetItem = self.createScreenScene(sceneItem['name'], image, screenTreeWidgetItemGroup)
                 for elementItem in sceneItem['children']:
-                    rect = QtCore.QRectF(*elementItem['rect'])
                     if elementItem['type'] == 1:
+                        rect = QtCore.QRectF(*elementItem['rect'])
                         screenGraphicsItem = screenGraphicsView.createRectItem(elementItem['name'], rect)
                     else:
-                        screenGraphicsItem = screenGraphicsView.createPointItem(elementItem['name'], rect)
+                        point = QtCore.QPoint(*elementItem['point'])
+                        screenGraphicsItem = screenGraphicsView.createPointItem(elementItem['name'], point)
                     self.createScreenElement(elementItem['name'], screenGraphicsView, screenGraphicsItem)
 
         def forEditorTreeItem(items, parentEditorTreeWidgetItem: EditorTreeWidgetItemFolder = None):
@@ -138,8 +143,9 @@ class MainWindow(QtWidgets.QMainWindow):
         self.setWindowTitle('{name}({dir})'.format(name=os.path.basename(file), dir=file))
 
     def save(self, file):
+        data = self.serializeData()
         with open(file, 'wb') as f:
-            f.write(self.serializeData())
+            f.write(data)
         self._file = file
         self.setWindowTitle('{name}({dir})'.format(name=os.path.basename(file), dir=file))
 
@@ -156,6 +162,14 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.save(file)
         else:
             self.save(self._file)
+
+    def on_newMenu_triggered(self, checked=False):
+        self._file = None
+        self.ui.screenTabWidget.clear()
+        self.ui.screenListWidget.clear()
+        self.ui.screenTreeWidget.clear()
+        self.ui.editorTreeWidget.clear()
+        self.ui.editorTabWidget.clear()
 
     def on_editorTreeWidget_addFolderTriggered(self, parent: EditorTreeWidgetItemFolder = None):
         self.ui.editorTreeWidget.addFolder(Name("新建分类"), parent)
@@ -217,18 +231,19 @@ class MainWindow(QtWidgets.QMainWindow):
             if not isinstance(item, ScreenTreeWidgetItemElement):
                 continue
             elementName = item.name()
-            rect: QtCore.QRectF = item.graphicsItem().mapRectToScene(item.graphicsItem().rect().normalized())
+            rect: QtCore.QRectF = item.graphicsItem().mapRectToScene(item.graphicsItem().rect())
             if isinstance(item.graphicsItem(), ScreenGraphicsItemPoint):
-                values[elementName.id()] = cmd.Point(item.parent().graphicsView().image(), rect.normalized().center().toPoint())
+                values[elementName.id()] = executor.Point(item.parent().graphicsView().sceneImage(), rect.center().toPoint())
             else:
-                values[elementName.id()] = cmd.Rect(item.parent().graphicsView().image(), rect.normalized().toRect())
+                values[elementName.id()] = executor.Rect(item.parent().graphicsView().sceneImage(), rect.toRect())
 
         def reader(file: EditorTreeWidgetItemFile, files=files):
             if file.name().id() in files:
                 return files[file.name().id()]
             # TODO 文件不存在
 
-        thread.async_(cmd.run, self._device, values, reader, editorTreeWidgetItem)
+        dialog = RunDialog(self, self._device, values, reader, editorTreeWidgetItem)
+        dialog.exec()
 
     def on_screenGraphicsView_sizeChange(self, width: int, height: int):
         self.ui.widget_1.setMinimumWidth(width)
@@ -265,7 +280,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def on_screenTreeWidget_reloadSceneImageTriggered(self, screenTreeWidgetItemScene: ScreenTreeWidgetItemScene):
         qimage = self._device.screen()
-        screenTreeWidgetItemScene.graphicsView().loadScene(qimage)
+        screenTreeWidgetItemScene.graphicsView().setSceneImage(qimage)
         screenTreeWidgetItemScene.listItem().setImage(qimage)
 
     def on_screenTreeWidget_sceneNameChanged(self, screenTreeWidgetItemScene: ScreenTreeWidgetItemScene, event: ScreenTreeWidgetItemNameChangeEvent):
@@ -288,9 +303,9 @@ class MainWindow(QtWidgets.QMainWindow):
         elif isinstance(currentTreeItem, ScreenTreeWidgetItemElement):
             self.ui.screenTabWidget.setCurrentWidget(currentTreeItem.parent().graphicsView())
             self.ui.screenListWidget.setCurrentItem(currentTreeItem.parent().listItem())
-            thread.async_(currentTreeItem.graphicsItem().light)
+            currentTreeItem.graphicsItem().light()
 
-    def on_screenListWidget_currentItemChanged(self, currentListItem: QtWidgets.QListWidgetItem, previousListItem: QtWidgets.QListWidgetItem):
+    def on_screenListWidget_currentItemChanged(self, currentListItem: ScreenListWidgetItem, previousListItem: ScreenListWidgetItem):
         if currentListItem is None:
             return
         self.ui.screenTabWidget.setCurrentWidget(currentListItem.graphicsView())
@@ -309,7 +324,7 @@ class MainWindow(QtWidgets.QMainWindow):
         screenGraphicsView.addedElement.connect(self.on_screenGraphicsView_addedElement)
         screenGraphicsView.clickRequested.connect(lambda p: self.deviceClick(p))
         screenGraphicsView.moveRequested.connect(lambda p, p1: self.deviceMove(p, p1))
-        screenGraphicsView.loadScene(image)
+        screenGraphicsView.setSceneImage(image)
         self.ui.screenTabWidget.addTab(screenGraphicsView, name)
 
         listItem = ScreenListWidgetItem(image)

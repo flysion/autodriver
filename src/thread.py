@@ -1,11 +1,9 @@
 from PySide6 import QtCore
 
-_threads = {}
 
-
-class Thread(QtCore.QThread):
+class Async(QtCore.QThread):
     def __init__(self, fn, *args, **kwargs):
-        super(Thread, self).__init__()
+        super(Async, self).__init__()
         self._fn = fn
         self._args = args
         self._kwargs = kwargs
@@ -14,14 +12,16 @@ class Thread(QtCore.QThread):
         self._fn(*self._args, **self._kwargs)
 
 
-def on_thread_finished(thread: Thread):
-    global _threads
-    del _threads[id(thread)]
+class Tick(QtCore.QThread):
+    def __init__(self, fn, ms, total, *args, **kwargs):
+        super(Tick, self).__init__()
+        self._ms = ms
+        self._total = total
+        self._fn = fn
+        self._args = args
+        self._kwargs = kwargs
 
-
-def async_(fn, *args, **kwargs):
-    global _threads
-    thread = Thread(fn, *args, **kwargs)
-    thread.finished.connect(lambda thread=thread: on_thread_finished(thread))
-    _threads[id(thread)] = thread
-    thread.start()
+    def run(self) -> None:
+        for i in range(self._total):
+            self._fn(*self._args, **self._kwargs)
+            self.msleep(self._ms)

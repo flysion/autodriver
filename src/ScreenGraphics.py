@@ -1,10 +1,31 @@
 import time
+from typing import TYPE_CHECKING
 
 from PySide6 import QtWidgets, QtGui, QtCore
 
 import utils
 from Name import Name
-from typing import TYPE_CHECKING
+
+_normalBrush = QtGui.QBrush(QtGui.QColor(255, 0, 0, 180))
+_activeBrush = QtGui.QBrush(QtGui.QColor(0, 255, 0, 180))
+_lightBrush = QtGui.QBrush(QtGui.QColor(255, 255, 0, 180))
+
+_backgroundPen = QtGui.QPen()
+_backgroundPen.setColor(QtGui.QColor(200, 200, 200))
+_backgroundPen.setWidth(1)
+
+_backgroundBrush = QtGui.QBrush(QtGui.QColor(100, 100, 100))
+
+_textPen = QtGui.QPen()
+_textPen.setWidth(1)
+_textPen.setColor(QtGui.QColor(255, 255, 255))
+
+_textFont = QtGui.QFont()
+_textFont.setPointSize(18)
+
+_posTextPen = QtGui.QPen()
+_posTextPen.setWidth(2)
+_posTextPen.setColor(QtGui.QColorConstants.Red)
 
 
 class ScreenGraphicsScene(QtWidgets.QGraphicsScene):
@@ -12,45 +33,26 @@ class ScreenGraphicsScene(QtWidgets.QGraphicsScene):
         super(ScreenGraphicsScene, self).__init__(parent)
 
 
-class ScreenGraphicsItemText(QtWidgets.QGraphicsTextItem):
-    def __init__(self, text, size: int = 12):
-        super(ScreenGraphicsItemText, self).__init__()
-
-        self._font = QtGui.QFont()
-        self._font.setPointSize(size)
-        self._font.setBold(True)
-
-        self.setPlainText(text)
-        self.setDefaultTextColor(QtGui.QColorConstants.White)
-        self.setFont(self._font)
-
-
 class ScreenGraphicsItemPoint(QtWidgets.QGraphicsEllipseItem):
     if TYPE_CHECKING:
         from ScreenTree import ScreenTreeWidgetItemElement
 
-    _normalBrush = QtGui.QBrush(QtGui.QColor(255, 0, 0, 180))
-    _activeBrush = QtGui.QBrush(QtGui.QColor(0, 255, 0, 180))
-    _lightBrush = QtGui.QBrush(QtGui.QColor(255, 255, 0, 180))
+    def __init__(self, name: Name, point: QtCore.QPointF):
+        super(ScreenGraphicsItemPoint, self).__init__()
 
-    def __init__(self, name: Name, rect: QtCore.QRectF):
-        super(ScreenGraphicsItemPoint, self).__init__(rect)
-
+        self._name = name
         self._mousePressedInfo = None
+        self._active = False
         self._treeItem = None
-        self.setBrush(self._normalBrush)
+        self.setBrush(_normalBrush)
         self.setPen(QtCore.Qt.PenStyle.NoPen)
 
-        topLeft = rect.normalized().topLeft()
-        self._textItem = ScreenGraphicsItemText(name.id())
-        self._textItem.setParentItem(self)
-        self._textItem.setPos(
-            topLeft.x() + ((self.boundingRect().width() - self._textItem.boundingRect().width()) / 2),
-            topLeft.y() + ((self.boundingRect().height() - self._textItem.boundingRect().height()) / 2)
-        )
+        rect = QtCore.QRectF(QtCore.QPointF(point.x() - 20, point.y() - 20),
+                             QtCore.QPointF(point.x() + 20, point.y() + 20))
 
+        self.setRect(rect)
         self.setAcceptHoverEvents(True)
-        self.setFlag(QtWidgets.QGraphicsItem.GraphicsItemFlag.ItemIsSelectable)
+        # self.setFlag(QtWidgets.QGraphicsItem.GraphicsItemFlag.ItemIsSelectable)
         self.setToolTip(name)
 
     def setTreeItem(self, treeItem: 'ScreenTreeWidgetItemElement'):
@@ -59,26 +61,49 @@ class ScreenGraphicsItemPoint(QtWidgets.QGraphicsEllipseItem):
     def treeItem(self) -> 'ScreenTreeWidgetItemElement':
         return self._treeItem
 
-    def active(self, active=True):
+    def setActive(self, active):
+        self._active = active
         if active:
-            self.setBrush(self._activeBrush)
+            self.setBrush(_activeBrush)
         else:
-            self.setBrush(self._normalBrush)
+            self.setBrush(_normalBrush)
+
+    def active(self):
+        return self._active
 
     def light(self):
         scene = self.scene()
         for i in range(3):
-            self.setBrush(self._lightBrush)
+            self.setBrush(_lightBrush)
             scene.update(self.rect())
             time.sleep(0.05)
-            self.setBrush(self._normalBrush)
+            self.setBrush(_normalBrush)
             scene.update(self.rect())
             time.sleep(0.05)
 
+    def sceneEvent(self, e):
+        if isinstance(e, QtWidgets.QGraphicsSceneMouseEvent):
+            if e.type() == QtCore.QEvent.Type.GraphicsSceneMousePress:
+                self.mousePressEvent(e)
+            elif e.type() == QtCore.QEvent.Type.GraphicsSceneMouseMove:
+                self.mouseMoveEvent(e)
+            elif e.type() == QtCore.QEvent.Type.GraphicsSceneMouseRelease:
+                self.mouseReleaseEvent(e)
+            else:
+                return False
+        elif isinstance(e, QtWidgets.QGraphicsSceneHoverEvent):
+            self.hoverMoveEvent(e)
+        else:
+            return False
+        return True
+
     def paint(self, painter: QtGui.QPainter, option: QtWidgets.QStyleOptionGraphicsItem, widget: QtWidgets.QWidget) -> None:
-        if self.isSelected():
-            option.state = QtWidgets.QStyle.StateFlag.State_None  # 取消[选中状态]时的边框虚线
         super(ScreenGraphicsItemPoint, self).paint(painter, option, widget)
+        painter.save()
+        painter.setPen(_textPen)
+        painter.setFont(_textFont)
+        painter.drawText(self.rect(), QtCore.Qt.AlignmentFlag.AlignCenter | QtCore.Qt.AlignmentFlag.AlignHCenter, self._name.id())
+        painter.restore()
 
     def hoverMoveEvent(self, e: QtWidgets.QGraphicsSceneHoverEvent) -> None:
         if e.modifiers() == QtCore.Qt.KeyboardModifier.ControlModifier:
@@ -87,55 +112,50 @@ class ScreenGraphicsItemPoint(QtWidgets.QGraphicsEllipseItem):
             self.setCursor(QtCore.Qt.CursorShape.CrossCursor)
 
     def mousePressEvent(self, e: QtWidgets.QGraphicsSceneMouseEvent) -> None:
-        super(ScreenGraphicsItemPoint, self).mousePressEvent(e)
         if e.modifiers() == QtCore.Qt.KeyboardModifier.ControlModifier and e.button() == QtCore.Qt.MouseButton.LeftButton:
-            self._mousePressedInfo = (self.scenePos(), e.scenePos(), self.mapRectToScene(self.rect()))
-            self.active(active=True)
+            self._mousePressedInfo = (self.rect(), e.scenePos(), self.mapRectToScene(self.rect()))
+            self.setActive(True)
+            return
+        self._mousePressedInfo = None
+        self.setActive(False)
 
     def mouseMoveEvent(self, e: QtWidgets.QGraphicsSceneMouseEvent) -> None:
-        super(ScreenGraphicsItemPoint, self).mouseMoveEvent(e)
         if e.modifiers() == QtCore.Qt.KeyboardModifier.ControlModifier and e.buttons() == QtCore.Qt.MouseButton.LeftButton:
             if self._mousePressedInfo is not None:
-                self.setPos(self._mousePressedInfo[0] + (e.scenePos() - self._mousePressedInfo[1]))
-        elif self._mousePressedInfo is not None:
-            self._mousePressedInfo = None
-            self.active(active=False)
+                sceneBottomRight = self.scene().sceneRect().bottomRight()
+                rect = self._mousePressedInfo[0].translated(e.scenePos() - self._mousePressedInfo[1])
+                topLeft = rect.topLeft()
+                rect.moveTopLeft(QtCore.QPointF(min(max(0, topLeft.x()), sceneBottomRight.x() - rect.width()),
+                                                min(max(0, topLeft.y()), sceneBottomRight.y() - rect.height())))
+                self.setRect(rect)
+                return
+        self._mousePressedInfo = None
+        self.setActive(False)
 
     def mouseReleaseEvent(self, e: QtWidgets.QGraphicsSceneMouseEvent) -> None:
-        super(ScreenGraphicsItemPoint, self).mouseReleaseEvent(e)
         if self._mousePressedInfo is not None:
             self._mousePressedInfo = None
-            self.active(active=False)
+            self.setActive(False)
 
 
 class ScreenGraphicsItemRect(QtWidgets.QGraphicsRectItem):
     if TYPE_CHECKING:
         from ScreenTree import ScreenTreeWidgetItemElement
 
-    _normalBrush = QtGui.QBrush(QtGui.QColor(255, 0, 0, 180))
-    _activeBrush = QtGui.QBrush(QtGui.QColor(0, 255, 0, 180))
-    _lightBrush = QtGui.QBrush(QtGui.QColor(255, 255, 0, 180))
-
     def __init__(self, name: Name, rect: QtCore.QRectF):
         super(ScreenGraphicsItemRect, self).__init__(rect)
 
+        self._name = name
+        self._active = False
         self._mousePressedInfo = None
         self._treeItem = None
-        self._dragDirect = None
-        self.setBrush(self._normalBrush)
-        self.setPen(QtCore.Qt.PenStyle.NoPen)
-
-        self._textItem = ScreenGraphicsItemText(name.id())
-        self._textItem.setParentItem(self)
-        self._textItem.setPos(rect.normalized().topLeft())
-        self._textItem.setAcceptHoverEvents(True)
+        self._dragInfo = None
 
         self.setAcceptHoverEvents(True)
-        self.setFlag(QtWidgets.QGraphicsItem.GraphicsItemFlag.ItemIsSelectable)
+        # self.setFlag(QtWidgets.QGraphicsItem.GraphicsItemFlag.ItemIsSelectable)
         self.setToolTip(name)
-        # TODO 解决鼠标在子item上时无法触发父item的鼠标事件
-        # self.installSceneEventFilter(self._textItem)
-        # self.setFiltersChildEvents(True)
+        self.setBrush(_normalBrush)
+        self.setPen(QtCore.Qt.PenStyle.NoPen)
 
     def setTreeItem(self, treeItem: 'ScreenTreeWidgetItemElement'):
         self._treeItem = treeItem
@@ -143,87 +163,107 @@ class ScreenGraphicsItemRect(QtWidgets.QGraphicsRectItem):
     def treeItem(self) -> 'ScreenTreeWidgetItemElement':
         return self._treeItem
 
-    def active(self, active=True):
+    def setActive(self, active):
+        self._active = active
         if active:
-            self.setBrush(self._activeBrush)
+            self.setBrush(_activeBrush)
         else:
-            self.setBrush(self._normalBrush)
+            self.setBrush(_normalBrush)
+
+    def active(self):
+        return self._active
 
     def light(self):
         scene = self.scene()
         for i in range(3):
-            self.setBrush(self._lightBrush)
+            self.setBrush(_lightBrush)
             scene.update(self.rect())
             time.sleep(0.05)
-            self.setBrush(self._normalBrush)
+            self.setBrush(_normalBrush)
             scene.update(self.rect())
             time.sleep(0.05)
 
-    def paint(self, painter: QtGui.QPainter, option: QtWidgets.QStyleOptionGraphicsItem,
-              widget: QtWidgets.QWidget) -> None:
-        if self.isSelected():
-            option.state = QtWidgets.QStyle.StateFlag.State_None  # 取消[选中状态]时的边框虚线
+    def sceneEvent(self, e):
+        if isinstance(e, QtWidgets.QGraphicsSceneMouseEvent):
+            if e.type() == QtCore.QEvent.Type.GraphicsSceneMousePress:
+                self.mousePressEvent(e)
+            elif e.type() == QtCore.QEvent.Type.GraphicsSceneMouseMove:
+                self.mouseMoveEvent(e)
+            elif e.type() == QtCore.QEvent.Type.GraphicsSceneMouseRelease:
+                self.mouseReleaseEvent(e)
+            else:
+                return False
+        elif isinstance(e, QtWidgets.QGraphicsSceneHoverEvent):
+            self.hoverMoveEvent(e)
+        else:
+            return False
+        return True
+
+    def paint(self, painter: QtGui.QPainter, option: QtWidgets.QStyleOptionGraphicsItem, widget: QtWidgets.QWidget) -> None:
         super(ScreenGraphicsItemRect, self).paint(painter, option, widget)
+        painter.save()
+        painter.setPen(_textPen)
+        painter.setFont(_textFont)
+        painter.drawText(self.rect().adjusted(10, 10, 0, 0), self._name.id())
+        painter.restore()
 
     def hoverMoveEvent(self, e: QtWidgets.QGraphicsSceneHoverEvent) -> None:
-        self._dragDirect = None
+        self._dragInfo = None
         if e.modifiers() == QtCore.Qt.KeyboardModifier.ControlModifier:
             direct = utils.pointInRectDirect(QtCore.QPointF(e.scenePos()), self.mapRectToScene(self.rect()), 20)
             cursor = utils.directToCursorSizeStyle(direct)
             if cursor is not None:
                 self.setCursor(cursor)
-                self._dragDirect = direct
+                self._dragInfo = (direct,)
             else:
                 self.setCursor(QtCore.Qt.CursorShape.SizeAllCursor)
         else:
             self.setCursor(QtCore.Qt.CursorShape.CrossCursor)
 
     def mousePressEvent(self, e: QtWidgets.QGraphicsSceneMouseEvent) -> None:
-        super(ScreenGraphicsItemRect, self).mousePressEvent(e)
         if e.modifiers() == QtCore.Qt.KeyboardModifier.ControlModifier and e.button() == QtCore.Qt.MouseButton.LeftButton:
-            self._mousePressedInfo = (self.scenePos(), e.scenePos(), self.mapRectToScene(self.rect()))
-            self.active(active=True)
+            self._mousePressedInfo = (self.rect(), self.mapRectToScene(self.rect()), e.scenePos())
+            self.setActive(True)
+            return
+        self._mousePressedInfo = None
+        self.setActive(False)
 
     def mouseMoveEvent(self, e: QtWidgets.QGraphicsSceneMouseEvent) -> None:
-        super(ScreenGraphicsItemRect, self).mouseMoveEvent(e)
         if e.modifiers() == QtCore.Qt.KeyboardModifier.ControlModifier and e.buttons() == QtCore.Qt.MouseButton.LeftButton:
             if self._mousePressedInfo is not None:
-                if self._dragDirect is not None:
-                    self.dragSize(self._dragDirect, self._mousePressedInfo[2],
-                                  self._mousePressedInfo[1], e.scenePos())
+                pressItemRect, pressItemSceneRect, pressPos = self._mousePressedInfo
+                if self._dragInfo is not None:
+                    self.dragSize(self._dragInfo[0], pressItemSceneRect, pressPos, e.scenePos())
                 else:
-                    self.setPos(self._mousePressedInfo[0] + (e.scenePos() - self._mousePressedInfo[1]))
-        elif self._mousePressedInfo is not None:
-            self._mousePressedInfo = None
-            self.active(active=False)
+                    sceneBottomRight = self.scene().sceneRect().bottomRight()
+                    rect = pressItemRect.translated(e.scenePos() - pressPos)
+                    topLeft = rect.topLeft()
+                    rect.moveTopLeft(QtCore.QPointF(min(max(0, topLeft.x()), sceneBottomRight.x() - rect.width()),
+                                                    min(max(0, topLeft.y()), sceneBottomRight.y() - rect.height())))
+                    self.setRect(rect)
+                return
+        self._mousePressedInfo = None
+        self.setActive(False)
 
     def mouseReleaseEvent(self, e: QtWidgets.QGraphicsSceneMouseEvent) -> None:
-        super(ScreenGraphicsItemRect, self).mouseReleaseEvent(e)
         if self._mousePressedInfo is not None:
             self._mousePressedInfo = None
-            self.active(active=False)
+            self.setActive(False)
 
-    def dragSize(self, direct, mousePressedSceneRect, mousePressedScenePos, mouseMoveScenePos):
-        scenePos = mouseMoveScenePos - mousePressedScenePos
-        sceneRect = QtCore.QRectF(mousePressedSceneRect)  # 复制出来防止原数据被修改
+    def dragSize(self, direct, pressItemSceneRect, pressPos, movePos):
+        scenePos = movePos - pressPos
+        rect = QtCore.QRectF(pressItemSceneRect)
         if direct & utils.DIRECT_LEFT != 0:
-            sceneRect.setX(sceneRect.x() + scenePos.x())
+            rect.setX(rect.x() + scenePos.x())
         elif direct & utils.DIRECT_RIGHT != 0:
-            sceneRect.setWidth(sceneRect.width() + scenePos.x())
+            rect.setWidth(rect.width() + scenePos.x())
 
         if direct & utils.DIRECT_TOP != 0:
-            sceneRect.setY(sceneRect.y() + scenePos.y())
+            rect.setY(rect.y() + scenePos.y())
         elif direct & utils.DIRECT_BOTTOM != 0:
-            sceneRect.setHeight(sceneRect.height() + scenePos.y())
+            rect.setHeight(rect.height() + scenePos.y())
 
-        self.setRect(self.mapRectFromScene(sceneRect))
-
-    def setRect(self, rect: QtCore.QRectF) -> None:
-        super(ScreenGraphicsItemRect, self).setRect(rect)
-        textRect = rect.normalized()
-        self._textItem.setPos(self.mapFromScene(
-            QtCore.QPointF(textRect.topLeft())
-        ))
+        self.setRect(self.scene().sceneRect().intersected(self.mapRectFromScene(rect).normalized()))
 
 
 class ScreenGraphicsView(QtWidgets.QGraphicsView):
@@ -242,10 +282,7 @@ class ScreenGraphicsView(QtWidgets.QGraphicsView):
         self.setAutoFillBackground(False)
         self.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-        brush = QtGui.QBrush(QtGui.QColor(0, 0, 0))
-        brush.setStyle(QtCore.Qt.BrushStyle.NoBrush)
-        self.setBackgroundBrush(brush)
-        self.setStyleSheet("border:0px; padding:0px;")
+        self.setStyleSheet("border:0px; background:transparent")
         self.setViewportUpdateMode(QtWidgets.QGraphicsView.ViewportUpdateMode.FullViewportUpdate)  # 消除拖动残影
         self.setTransformationAnchor(QtWidgets.QGraphicsView.ViewportAnchor.AnchorUnderMouse)
         self.setResizeAnchor(QtWidgets.QGraphicsView.ViewportAnchor.AnchorUnderMouse)
@@ -276,97 +313,127 @@ class ScreenGraphicsView(QtWidgets.QGraphicsView):
     def treeItem(self) -> 'ScreenTreeWidgetItemScene':
         return self._treeItem
 
-    def loadScene(self, image: QtGui.QImage):
+    def setSceneImage(self, image: QtGui.QImage):
         self._sceneImage = image
         if self._sceneItem is None:
             self._sceneItem = self.scene().addPixmap(QtGui.QPixmap.fromImage(image))
         else:
             self._sceneItem.setPixmap(QtGui.QPixmap.fromImage(image))
-        self.scene().setSceneRect(0, 0, image.width(), image.height())
-        self.fitSize()
+        self.scene().setSceneRect(0, 0, self._sceneImage.width(), self._sceneImage.height())
+        self.adjustSize()
+        self.adjustSceneSize()
 
-    def image(self) -> QtGui.QImage:
+    def sceneImage(self) -> QtGui.QImage:
         return self._sceneImage
+
+    def sceneItem(self) -> QtWidgets.QGraphicsPixmapItem:
+        return self._sceneItem
 
     def wheelEvent(self, e: QtGui.QWheelEvent) -> None:
         scale = 1.2 if e.angleDelta().y() > 0 else 1 / 1.2
-        scaledRect = self.transform().scale(scale, scale).mapRect(QtCore.QRectF(0, 0, self._sceneImage.width(), self._sceneImage.height()))
-        # 由于使用了固定的步长（1.2）来缩放，所以缩放比例只会出现 -2.4,-1.2,0,1.2,2.4
-        # 因此滚轮正传反转一次会刚好还原，所以不需要操心：本次缩放后高度比初始小，不缩放又比初始大的情况
-        if scaledRect.height() < self.height():
-            return
         self.scale(scale, scale)
+
+    def drawBackground(self, painter: QtGui.QPainter, rect: QtCore.QRectF):
+        painter.save()
+
+        painter.setBrush(_backgroundBrush)
+        painter.setPen(_backgroundPen)
+
+        painter.drawRect(rect)
+
+        topLeft = rect.topLeft().toPoint()
+        bottomRight = rect.bottomRight().toPoint()
+        for x in range(topLeft.x() + 20, bottomRight.x(), 20):
+            painter.drawLine(QtCore.QPoint(x, topLeft.y()), QtCore.QPoint(x, bottomRight.y()))
+        for y in range(topLeft.y() + 20, bottomRight.y(), 20):
+            painter.drawLine(QtCore.QPoint(topLeft.x(), y), QtCore.QPoint(bottomRight.x(), y))
+
+        painter.restore()
 
     def paintEvent(self, e: QtGui.QPaintEvent) -> None:
         super(ScreenGraphicsView, self).paintEvent(e)
 
-        pos = self._mouseMoveInfo
-        if pos is None:
+        if self._mouseMoveInfo is None:
+            return
+
+        pos, scenePos = self._mouseMoveInfo
+        if not self.sceneRect().contains(scenePos):
             return
 
         # 显示参考线
         painter = QtGui.QPainter(self.viewport())
-        pen = QtGui.QPen()
-        pen.setWidth(1)
-        pen.setColor(QtGui.QColorConstants.White)
-        painter.setPen(pen)
+        painter.setPen(_posTextPen)
         painter.drawLine(0, pos.y(), self.width(), pos.y())
         painter.drawLine(pos.x(), 0, pos.x(), self.height())
-
         # 显示坐标位置
-        scenePos = self.mapToScene(QtCore.QPoint(pos.x(), pos.y()))
-        painter.drawText(QtCore.QPointF(0, 10), "%d,%d" % (scenePos.x(), scenePos.y()))
+        pointColor = self._sceneImage.pixelColor(scenePos.toPoint())
+        text = "%d,%d,#%s" % (scenePos.x(), scenePos.y(), utils.qcolor2hex(pointColor))
+        painter.drawText(QtCore.QPoint(0, 10), text)
 
-    def fitSize(self):
-        scale = self.height() / self._sceneImage.height()
-        width = self._sceneImage.width() * scale
-        transform = QtGui.QTransform(scale, self.transform().m12(), self.transform().m21(), scale, self.transform().dx(), self.transform().dy())
+    def adjustSceneSize(self) -> None:
+        if self.width() / self.height() < self._sceneImage.width() / self._sceneImage.height():
+            scale = self.width() / self._sceneImage.width()
+        else:
+            scale = self.height() / self._sceneImage.height()
+        transform = QtGui.QTransform(scale, self.transform().m12(), self.transform().m21(),
+                                     scale, self.transform().dx(), self.transform().dy())
         self.setTransform(transform)
-        self.sizeChanged.emit(width, self.height())
 
     def resizeEvent(self, e: QtGui.QResizeEvent) -> None:
         super(ScreenGraphicsView, self).resizeEvent(e)
-        # 宽度随高度的比例调整，所以无视宽度resize
-        if e.oldSize().height() == e.size().height():
-            return
-        self.fitSize()
+        self.adjustSceneSize()
 
     def mousePressEvent(self, e: QtGui.QMouseEvent) -> None:
         super(ScreenGraphicsView, self).mousePressEvent(e)
-        centerPos = self.mapToScene(e.position().toPoint()) - e.position() + QtCore.QPointF(self.width() / 2, self.height() / 2)
+
+        pressPos = e.position()
+        pressScenePos = self.mapToScene(pressPos.toPoint())
+        if self.sceneRect().contains(pressScenePos):
+            pressCenterPos = pressScenePos - pressPos + QtCore.QPointF(self.width() / 2, self.height() / 2)
+            self._drawingRectItem = None
+            self._mousePressedInfo = (pressPos, e.button(), pressCenterPos, pressScenePos)
+            return
         self._drawingRectItem = None
-        self._mousePressedInfo = (e.position(), e.button(), centerPos)
+        self._mousePressedInfo = None
 
     def mouseMoveEvent(self, e: QtGui.QMouseEvent) -> None:
         super(ScreenGraphicsView, self).mouseMoveEvent(e)
 
-        self._mouseMoveInfo = (e.position())
+        movePos = e.position()
+        moveScenePos = self.mapToScene(movePos.toPoint())
+        self._mouseMoveInfo = (movePos, moveScenePos)
         self.viewport().update()  # trigger paintEvent
 
         if e.modifiers() == QtCore.Qt.KeyboardModifier.NoModifier and self._mousePressedInfo is not None:
-            pos, button, centerPos = self._mousePressedInfo
+            pressPos, pressButton, pressCenterPos, pressScenePos = self._mousePressedInfo
             if e.buttons() == QtCore.Qt.MouseButton.LeftButton:  # 绘图
                 if self._drawingRectItem is None:
-                    self._drawingRectItem = self.addRectItem(pos, e.position())
+                    self._drawingRectItem = self.addRectItem(pressScenePos, moveScenePos)
                 else:
-                    self.updateCurrentDrawingRectItem(pos, e.position())
+                    self.updateCurrentDrawingRectItem(pressScenePos, moveScenePos)
+                return
             elif e.buttons() == QtCore.Qt.MouseButton.RightButton:  # 拖放
-                self.centerOn(centerPos - (self.mapToScene(e.position().toPoint()) - self.mapToScene(pos.toPoint())))
-        else:
-            self._drawingRectItem = None
+                self.centerOn(pressCenterPos - (moveScenePos - pressScenePos))
+                return
+        self._drawingRectItem = None
+        self._mousePressedInfo = None
 
     def mouseReleaseEvent(self, e: QtGui.QMouseEvent) -> None:
         super(ScreenGraphicsView, self).mouseReleaseEvent(e)
+
+        releasePos = e.position()
+        releaseScenePos = self.mapToScene(releasePos.toPoint())
+
         if e.button() == QtCore.Qt.MouseButton.LeftButton and self._mousePressedInfo is not None:
-            pos = self._mousePressedInfo[0]
+            pressPos, _, _, pressScenePos = self._mousePressedInfo
             if e.modifiers() == QtCore.Qt.KeyboardModifier.NoModifier:
                 if self._drawingRectItem is None:  # 鼠标按下后没有移动
-                    self.addPointItem(e.position())
+                    self.addPointItem(releaseScenePos)
             elif e.modifiers() == QtCore.Qt.KeyboardModifier.AltModifier:
-                if e.position().x() == pos.x() and e.position().y() == pos.y():
-                    self.clickRequested.emit(self.mapToScene(e.position().toPoint()).toPoint())
+                if releasePos.x() == pressPos.x() and releasePos.y() == pressPos.y():
+                    self.clickRequested.emit(releaseScenePos.toPoint())
                 else:
-                    self.moveRequested.emit(self.mapToScene(pos.toPoint()).toPoint(), self.mapToScene(e.position().toPoint()).toPoint())
+                    self.moveRequested.emit(pressScenePos.toPoint(), releaseScenePos.toPoint())
 
         self._drawingRectItem = None
         self._mousePressedInfo = None
@@ -380,27 +447,20 @@ class ScreenGraphicsView(QtWidgets.QGraphicsView):
                 self.viewport().update()  # trigger paintEvent
         return super(ScreenGraphicsView, self).eventFilter(o, e)
 
-    def updateCurrentDrawingRectItem(self, mousePressedPos: QtCore.QPointF, mouseMovePos: QtCore.QPointF):
-        point1 = self.mapToScene(mousePressedPos.toPoint())
-        point2 = self.mapToScene(mouseMovePos.toPoint())
-        rect = QtCore.QRectF(point1, point2)
+    def updateCurrentDrawingRectItem(self, topLeft: QtCore.QPointF, bottomRight: QtCore.QPointF):
+        rect = self.sceneRect().intersected(QtCore.QRectF(topLeft, bottomRight).normalized())
         self._drawingRectItem.setRect(rect)
 
-    def addRectItem(self, mousePressedPos: QtCore.QPointF, mouseMovePos: QtCore.QPointF):
+    def addRectItem(self, topLeft: QtCore.QPointF, bottomRight: QtCore.QPointF):
         name = Name("", id=f"r{self._counter.next()}")
-        topLeft = self.mapToScene(mousePressedPos.toPoint())
-        bottomRight = self.mapToScene(mouseMovePos.toPoint())
-        item = self.createRectItem(name, QtCore.QRectF(topLeft, bottomRight))
+        rect = self.sceneRect().intersected(QtCore.QRectF(topLeft, bottomRight).normalized())
+        item = self.createRectItem(name, rect)
         self.addedElement.emit(self, name, item)
         return item
 
-    def addPointItem(self, mousePressedPos: QtCore.QPointF):
+    def addPointItem(self, point: QtCore.QPointF):
         name = Name("", id=f"p{self._counter.next()}")
-        width = self.transform().m11() * self._sceneImage.width() * 0.02  # 通过缩放比例显示点的大小
-        height = self.transform().m22() * self._sceneImage.width() * 0.02  # 通过缩放比例显示点的大小
-        topLeft = self.mapToScene(QtCore.QPoint(mousePressedPos.x() - width, mousePressedPos.y() - height))
-        bottomRight = self.mapToScene(QtCore.QPoint(mousePressedPos.x() + width, mousePressedPos.y() + height))
-        item = self.createPointItem(name, QtCore.QRectF(topLeft, bottomRight))
+        item = self.createPointItem(name, point)
         self.addedElement.emit(self, name, item)
         return item
 
@@ -409,7 +469,7 @@ class ScreenGraphicsView(QtWidgets.QGraphicsView):
         self.scene().addItem(item)
         return item
 
-    def createPointItem(self, name: Name, rect: QtCore.QRectF):
-        item = ScreenGraphicsItemPoint(name, rect)
+    def createPointItem(self, name: Name, point: QtCore.QPointF):
+        item = ScreenGraphicsItemPoint(name, point)
         self.scene().addItem(item)
         return item

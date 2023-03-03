@@ -1,4 +1,3 @@
-import numpy
 from PySide6 import QtCore, QtGui
 
 DIRECT_NONE = 0
@@ -43,3 +42,7 @@ def directToCursorSizeStyle(direct):
         return QtCore.Qt.CursorShape.SizeHorCursor
     else:
         return None
+
+
+def qcolor2hex(color: QtGui.QColor):
+    return "{:02X}{:02X}{:02X}".format(color.red(), color.green(), color.blue())
