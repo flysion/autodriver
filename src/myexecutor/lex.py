@@ -11,7 +11,7 @@ class TokenError(BaseException):
         return self._token
 
 
-literals = [',', '.', '=', ':', '#']
+literals = [',', '.', '=', ':']
 
 reserved = ['TRUE', 'FALSE', 'NULL']
 

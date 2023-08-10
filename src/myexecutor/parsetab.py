@@ -6,9 +6,9 @@ _tabversion = '3.10'
 
 _lr_method = 'LALR'
 
-_lr_signature = "startFALSE NULL TRUE iCHAR iCOMMENT iESCAPE iESCAPE_CHAR iFLOAT iINTEGER iKEYWORD iLBRACE iNEWLINE iRBRACE\n    start : comment\n          | command\n          | label\n    \n    start : start newline comment\n          | start newline command\n          | start newline label\n          | start newline\n    \n    newline : iNEWLINE\n            | newline iNEWLINE\n    \n    comment : iCOMMENT\n    \n    label : iKEYWORD ':'\n    \n    command : iKEYWORD\n    \n    command : iKEYWORD args\n    \n    command : iKEYWORD kwargs\n    \n    command : iKEYWORD args ',' kwargs\n    \n    args : value\n    \n    args : args ',' value\n    \n    value : iINTEGER\n    \n    value : iFLOAT\n    \n    value : TRUE\n          | FALSE\n    \n    value : NULL\n    \n    value : str\n    \n    value : keyword\n    \n    keyword : iKEYWORD\n    \n    keyword : keyword '.' iKEYWORD\n    \n    kwarg : iKEYWORD '=' value\n    \n    kwargs : kwarg\n    \n    kwargs : kwargs ',' kwarg\n    \n    str : iLBRACE chars iRBRACE\n    \n    chars : char\n    \n    chars : chars char\n    \n    char : iCHAR\n    \n    char : iESCAPE iESCAPE_CHAR\n    "
+_lr_signature = "startFALSE NULL TRUE iCHAR iCOMMENT iESCAPE iESCAPE_CHAR iFLOAT iINTEGER iKEYWORD iLBRACE iNEWLINE iRBRACE\n    start : body\n          | newlines\n          | newlines body\n          | body newlines\n          | newlines body newlines\n          |\n    \n    body : comment\n         | command\n         | label\n    \n    body : body newlines comment\n         | body newlines command\n         | body newlines label\n    \n    newlines : iNEWLINE\n             | newlines iNEWLINE\n    \n    comment : iCOMMENT\n    \n    label : iKEYWORD ':'\n    \n    command : iKEYWORD\n    \n    command : iKEYWORD args\n    \n    command : iKEYWORD kwargs\n    \n    command : iKEYWORD args ',' kwargs\n    \n    args : value\n    \n    args : args ',' value\n    \n    value : iINTEGER\n    \n    value : iFLOAT\n    \n    value : TRUE\n          | FALSE\n    \n    value : NULL\n    \n    value : str\n    \n    value : keyword\n    \n    keyword : iKEYWORD\n    \n    keyword : keyword '.' iKEYWORD\n    \n    kwarg : iKEYWORD '=' value\n    \n    kwargs : kwarg\n    \n    kwargs : kwargs ',' kwarg\n    \n    str : iLBRACE chars iRBRACE\n    \n    chars : char\n    \n    chars : chars char\n    \n    char : iCHAR\n    \n    char : iESCAPE iESCAPE_CHAR\n    "
     
-_lr_action_items = {'iCOMMENT':([0,7,8,26,],[5,5,-8,-9,]),'iKEYWORD':([0,6,7,8,26,27,28,29,30,],[6,9,6,-8,-9,35,9,40,41,]),'$end':([1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,23,24,25,26,35,36,37,38,39,41,42,],[0,-1,-2,-3,-10,-12,-7,-8,-25,-13,-14,-11,-16,-28,-18,-19,-20,-21,-22,-23,-24,-4,-5,-6,-9,-25,-27,-15,-17,-29,-26,-30,]),'iNEWLINE':([1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,23,24,25,26,35,36,37,38,39,41,42,],[8,-1,-2,-3,-10,-12,26,-8,-25,-13,-14,-11,-16,-28,-18,-19,-20,-21,-22,-23,-24,-4,-5,-6,-9,-25,-27,-15,-17,-29,-26,-30,]),':':([6,],[12,]),'iINTEGER':([6,27,28,],[15,15,15,]),'iFLOAT':([6,27,28,],[16,16,16,]),'TRUE':([6,27,28,],[17,17,17,]),'FALSE':([6,27,28,],[18,18,18,]),'NULL':([6,27,28,],[19,19,19,]),'iLBRACE':([6,27,28,],[22,22,22,]),'=':([9,40,],[27,27,]),'.':([9,21,35,41,],[-25,30,-25,-26,]),',':([9,10,11,13,14,15,16,17,18,19,20,21,35,36,37,38,39,41,42,],[-25,28,29,-16,-28,-18,-19,-20,-21,-22,-23,-24,-25,-27,29,-17,-29,-26,-30,]),'iCHAR':([22,31,32,33,43,44,],[33,33,-31,-33,-32,-34,]),'iESCAPE':([22,31,32,33,43,44,],[34,34,-31,-33,-32,-34,]),'iRBRACE':([31,32,33,43,44,],[42,-31,-33,-32,-34,]),'iESCAPE_CHAR':([34,],[44,]),}
+_lr_action_items = {'$end':([0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,27,28,29,30,39,40,41,42,43,45,46,],[-6,0,-1,-2,-7,-8,-9,-13,-15,-17,-4,-3,-14,-30,-18,-19,-16,-21,-33,-23,-24,-25,-26,-27,-28,-29,-10,-11,-12,-5,-30,-32,-20,-22,-34,-31,-35,]),'iNEWLINE':([0,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,27,28,29,30,39,40,41,42,43,45,46,],[7,7,12,-7,-8,-9,-13,-15,-17,12,7,-14,-30,-18,-19,-16,-21,-33,-23,-24,-25,-26,-27,-28,-29,-10,-11,-12,12,-30,-32,-20,-22,-34,-31,-35,]),'iCOMMENT':([0,3,7,10,12,30,],[8,8,-13,8,-14,8,]),'iKEYWORD':([0,3,7,9,10,12,30,31,32,33,34,],[9,9,-13,13,9,-14,9,39,13,44,45,]),':':([9,],[16,]),'iINTEGER':([9,31,32,],[19,19,19,]),'iFLOAT':([9,31,32,],[20,20,20,]),'TRUE':([9,31,32,],[21,21,21,]),'FALSE':([9,31,32,],[22,22,22,]),'NULL':([9,31,32,],[23,23,23,]),'iLBRACE':([9,31,32,],[26,26,26,]),'=':([13,44,],[31,31,]),'.':([13,25,39,45,],[-30,34,-30,-31,]),',':([13,14,15,17,18,19,20,21,22,23,24,25,39,40,41,42,43,45,46,],[-30,32,33,-21,-33,-23,-24,-25,-26,-27,-28,-29,-30,-32,33,-22,-34,-31,-35,]),'iCHAR':([26,35,36,37,47,48,],[37,37,-36,-38,-37,-39,]),'iESCAPE':([26,35,36,37,47,48,],[38,38,-36,-38,-37,-39,]),'iRBRACE':([35,36,37,47,48,],[46,-36,-38,-37,-39,]),'iESCAPE_CHAR':([38,],[48,]),}
 
 _lr_action = {}
 for _k, _v in _lr_action_items.items():
@@ -17,7 +17,7 @@ for _k, _v in _lr_action_items.items():
       _lr_action[_x][_k] = _y
 del _lr_action_items
 
-_lr_goto_items = {'start':([0,],[1,]),'comment':([0,7,],[2,23,]),'command':([0,7,],[3,24,]),'label':([0,7,],[4,25,]),'newline':([1,],[7,]),'args':([6,],[10,]),'kwargs':([6,28,],[11,37,]),'value':([6,27,28,],[13,36,38,]),'kwarg':([6,28,29,],[14,14,39,]),'str':([6,27,28,],[20,20,20,]),'keyword':([6,27,28,],[21,21,21,]),'chars':([22,],[31,]),'char':([22,31,],[32,43,]),}
+_lr_goto_items = {'start':([0,],[1,]),'body':([0,3,],[2,11,]),'newlines':([0,2,11,],[3,10,30,]),'comment':([0,3,10,30,],[4,4,27,27,]),'command':([0,3,10,30,],[5,5,28,28,]),'label':([0,3,10,30,],[6,6,29,29,]),'args':([9,],[14,]),'kwargs':([9,32,],[15,41,]),'value':([9,31,32,],[17,40,42,]),'kwarg':([9,32,33,],[18,18,43,]),'str':([9,31,32,],[24,24,24,]),'keyword':([9,31,32,],[25,25,25,]),'chars':([26,],[35,]),'char':([26,35,],[36,47,]),}
 
 _lr_goto = {}
 for _k, _v in _lr_goto_items.items():
@@ -27,38 +27,43 @@ for _k, _v in _lr_goto_items.items():
 del _lr_goto_items
 _lr_productions = [
   ("S' -> start","S'",1,None,None,None),
-  ('start -> comment','start',1,'p_start','yacc.py',12),
-  ('start -> command','start',1,'p_start','yacc.py',13),
-  ('start -> label','start',1,'p_start','yacc.py',14),
-  ('start -> start newline comment','start',3,'p_start_1','yacc.py',21),
-  ('start -> start newline command','start',3,'p_start_1','yacc.py',22),
-  ('start -> start newline label','start',3,'p_start_1','yacc.py',23),
-  ('start -> start newline','start',2,'p_start_1','yacc.py',24),
-  ('newline -> iNEWLINE','newline',1,'p_newline','yacc.py',31),
-  ('newline -> newline iNEWLINE','newline',2,'p_newline','yacc.py',32),
-  ('comment -> iCOMMENT','comment',1,'p_comment','yacc.py',38),
-  ('label -> iKEYWORD :','label',2,'p_label','yacc.py',45),
-  ('command -> iKEYWORD','command',1,'p_command','yacc.py',52),
-  ('command -> iKEYWORD args','command',2,'p_command_1','yacc.py',59),
-  ('command -> iKEYWORD kwargs','command',2,'p_command_2','yacc.py',66),
-  ('command -> iKEYWORD args , kwargs','command',4,'p_command_3','yacc.py',73),
-  ('args -> value','args',1,'p_args','yacc.py',80),
-  ('args -> args , value','args',3,'p_args_1','yacc.py',87),
-  ('value -> iINTEGER','value',1,'p_value_int','yacc.py',94),
-  ('value -> iFLOAT','value',1,'p_value_float','yacc.py',101),
-  ('value -> TRUE','value',1,'p_value_bool','yacc.py',108),
-  ('value -> FALSE','value',1,'p_value_bool','yacc.py',109),
-  ('value -> NULL','value',1,'p_value_null','yacc.py',116),
-  ('value -> str','value',1,'p_value_str','yacc.py',123),
-  ('value -> keyword','value',1,'p_value_keyword','yacc.py',130),
-  ('keyword -> iKEYWORD','keyword',1,'p_keyword','yacc.py',137),
-  ('keyword -> keyword . iKEYWORD','keyword',3,'p_keyword_1','yacc.py',144),
-  ('kwarg -> iKEYWORD = value','kwarg',3,'p_kwarg','yacc.py',151),
-  ('kwargs -> kwarg','kwargs',1,'p_kwargs','yacc.py',158),
-  ('kwargs -> kwargs , kwarg','kwargs',3,'p_kwargs_1','yacc.py',165),
-  ('str -> iLBRACE chars iRBRACE','str',3,'p_str','yacc.py',172),
-  ('chars -> char','chars',1,'p_chars','yacc.py',179),
-  ('chars -> chars char','chars',2,'p_chars_1','yacc.py',186),
-  ('char -> iCHAR','char',1,'p_char','yacc.py',193),
-  ('char -> iESCAPE iESCAPE_CHAR','char',2,'p_char_escape','yacc.py',200),
+  ('start -> body','start',1,'p_start','yacc.py',12),
+  ('start -> newlines','start',1,'p_start','yacc.py',13),
+  ('start -> newlines body','start',2,'p_start','yacc.py',14),
+  ('start -> body newlines','start',2,'p_start','yacc.py',15),
+  ('start -> newlines body newlines','start',3,'p_start','yacc.py',16),
+  ('start -> <empty>','start',0,'p_start','yacc.py',17),
+  ('body -> comment','body',1,'p_body','yacc.py',29),
+  ('body -> command','body',1,'p_body','yacc.py',30),
+  ('body -> label','body',1,'p_body','yacc.py',31),
+  ('body -> body newlines comment','body',3,'p_body_1','yacc.py',38),
+  ('body -> body newlines command','body',3,'p_body_1','yacc.py',39),
+  ('body -> body newlines label','body',3,'p_body_1','yacc.py',40),
+  ('newlines -> iNEWLINE','newlines',1,'p_newlines','yacc.py',47),
+  ('newlines -> newlines iNEWLINE','newlines',2,'p_newlines','yacc.py',48),
+  ('comment -> iCOMMENT','comment',1,'p_comment','yacc.py',55),
+  ('label -> iKEYWORD :','label',2,'p_label','yacc.py',62),
+  ('command -> iKEYWORD','command',1,'p_command','yacc.py',69),
+  ('command -> iKEYWORD args','command',2,'p_command_1','yacc.py',76),
+  ('command -> iKEYWORD kwargs','command',2,'p_command_2','yacc.py',83),
+  ('command -> iKEYWORD args , kwargs','command',4,'p_command_3','yacc.py',90),
+  ('args -> value','args',1,'p_args','yacc.py',97),
+  ('args -> args , value','args',3,'p_args_1','yacc.py',104),
+  ('value -> iINTEGER','value',1,'p_value_int','yacc.py',111),
+  ('value -> iFLOAT','value',1,'p_value_float','yacc.py',118),
+  ('value -> TRUE','value',1,'p_value_bool','yacc.py',125),
+  ('value -> FALSE','value',1,'p_value_bool','yacc.py',126),
+  ('value -> NULL','value',1,'p_value_null','yacc.py',133),
+  ('value -> str','value',1,'p_value_str','yacc.py',140),
+  ('value -> keyword','value',1,'p_value_keyword','yacc.py',147),
+  ('keyword -> iKEYWORD','keyword',1,'p_keyword','yacc.py',154),
+  ('keyword -> keyword . iKEYWORD','keyword',3,'p_keyword_1','yacc.py',161),
+  ('kwarg -> iKEYWORD = value','kwarg',3,'p_kwarg','yacc.py',168),
+  ('kwargs -> kwarg','kwargs',1,'p_kwargs','yacc.py',175),
+  ('kwargs -> kwargs , kwarg','kwargs',3,'p_kwargs_1','yacc.py',182),
+  ('str -> iLBRACE chars iRBRACE','str',3,'p_str','yacc.py',189),
+  ('chars -> char','chars',1,'p_chars','yacc.py',196),
+  ('chars -> chars char','chars',2,'p_chars_1','yacc.py',203),
+  ('char -> iCHAR','char',1,'p_char','yacc.py',210),
+  ('char -> iESCAPE iESCAPE_CHAR','char',2,'p_char_escape','yacc.py',217),
 ]

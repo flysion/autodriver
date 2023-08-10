@@ -39,7 +39,7 @@ class Label:
 
 def exec(main, reader, context: Context, commands: Mapping[str, Callable] = {},
          loop=True, quit: Callable = None, pause: Callable = None, sleep: Callable = None,
-         exec_callback: Callable = None, start_callback: Callable = None) -> int:
+         exec_callback: Callable = None) -> int:
     _exitcode: int = None
     _quit: bool = False
 
@@ -57,7 +57,6 @@ def exec(main, reader, context: Context, commands: Mapping[str, Callable] = {},
         return _quit
 
     context.exit = exit
-    context.quit = lambda: is_quit()
     context.sleep = lambda second: sleep(second) if sleep is not None else time.sleep(second)
 
     def run(file):
@@ -111,6 +110,22 @@ def exec(main, reader, context: Context, commands: Mapping[str, Callable] = {},
             'exit': lambda context, code=0: exit(code),
         })
 
+        def exec_command(name, args, kwargs):
+            if name not in _commands:
+                raise CommandNotFound(file, fragment)
+
+            fn = _commands[name]
+
+            _args = [context]
+            for arg in args:
+                _args.append(variable(arg))
+
+            _kwargs = {}
+            for kwarg in kwargs:
+                _kwargs[kwarg['name']] = variable(kwarg['value'])
+
+            return fn(*_args, **_kwargs)
+
         while _exitcode is None and not is_quit():
             if _index >= len(_fragments):
                 break
@@ -118,20 +133,7 @@ def exec(main, reader, context: Context, commands: Mapping[str, Callable] = {},
             fragment = _fragments[_index]
 
             if fragment['type'] == 'command':
-                name = fragment['name']
-                if name not in _commands:
-                    raise CommandNotFound(file, fragment)
-                fn = _commands[name]
-
-                args = [context]
-                for arg in fragment['args']:
-                    args.append(variable(arg))
-
-                kwargs = {}
-                for kwarg in fragment['kwargs']:
-                    kwargs[kwarg['name']] = variable(kwarg['value'])
-
-                result = fn(*args, **kwargs)
+                result = exec_command(fragment['name'], fragment['args'], fragment['kwargs'])
             elif fragment['type'] == 'label':
                 continue
             else:
@@ -141,9 +143,6 @@ def exec(main, reader, context: Context, commands: Mapping[str, Callable] = {},
 
             if exec_callback is not None:
                 exec_callback(context, file, fragment, result)
-
-    if start_callback is not None:
-        start_callback(context)
 
     while not is_quit():
         run(main)

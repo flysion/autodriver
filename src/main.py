@@ -6,16 +6,18 @@ if __name__ == '__main__':
     import sys
     from MainWindow import MainWindow
     from PySide6.QtWidgets import QApplication
-    from Device import ADB
+    from device import ADB
     import os
 
     app = QApplication([])
-    device = ADB()
+    adb = ADB()
 
-    w = MainWindow(device, file=os.path.abspath(sys.argv[1]) if len(sys.argv) > 1 else None)
+    w = MainWindow(adb, file=os.path.abspath(sys.argv[1]) if len(sys.argv) > 1 else None)
     w.show()
 
     try:
         sys.exit(app.exec())
     except Exception as e:
         logging.error('应用程序错误：{e}'.format(e=repr(e)))
+    finally:
+        adb.exit()

@@ -5,7 +5,7 @@ import numpy
 from PySide6 import QtGui, QtCore
 
 import myexecutor
-from Device import Device
+from device import ADB
 
 
 class Point:
@@ -110,11 +110,6 @@ def refresh_till_not(context: myexecutor.Context, pos: Rect, ms: int = 300, same
 
 
 @myexecutor.command()
-def touch_n(context: myexecutor.Context, x1: int, y1: int, x2: int, y2: int):
-    context.touch(x1, y1, x2, y2)
-
-
-@myexecutor.command()
 def touch(context: myexecutor.Context, p1: Point, p2: Point):
     context.touch(p1.point().x(), p1.point().y(), p2.point().x(), p2.point().y())
 
@@ -132,13 +127,13 @@ def touch_unless(context: myexecutor.Context, p1: Point, p2: Point, pos: Rect, s
 
 
 @myexecutor.command()
-def click_n(context: myexecutor.Context, x: int, y: int):
-    context.click(x, y)
+def touch1(context: myexecutor.Context, x1: int, y1: int, x2: int, y2: int):
+    context.touch(x1, y1, x2, y2)
 
 
 @myexecutor.command()
-def click(context: myexecutor.Context, pos: Union[Point, Rect]):
-    context.click(pos.x(), pos.y())
+def click1(context: myexecutor.Context, x: int, y: int):
+    context.click(x, y)
 
 
 @myexecutor.command()
@@ -154,13 +149,44 @@ def click_unless(context: myexecutor.Context, pos: Rect, same: int = 80):
 
 
 @myexecutor.command()
-def click_find(context: myexecutor.Context, pos: Rect, click_pos: Union[Point, Rect] = None, same: int = 80):
+def click_has(context: myexecutor.Context, pos: Rect, same: int = 80):
     maxValue, rect = screen_find(context.screen(), pos)
     if maxValue >= same:
-        if click_pos is None:
-            context.click(rect.center().x(), rect.center().y())
-        else:
-            context.click(click_pos.x(), click_pos.y())
+        context.click(rect.center().x(), rect.center().y())
+
+
+@myexecutor.command()
+def click(context: myexecutor.Context, pos: Union[Point, Rect]):
+    context.click(pos.x(), pos.y())
+
+
+@myexecutor.command()
+def dbclick1(context: myexecutor.Context, x: int, y: int):
+    context.dbclick(x, y)
+
+
+@myexecutor.command()
+def dbclick_if(context: myexecutor.Context, pos: Rect, same: int = 80):
+    if screen_sameness(context.screen(), pos) >= same:
+        context.dbclick(pos.x(), pos.y())
+
+
+@myexecutor.command()
+def dbclick_unless(context: myexecutor.Context, pos: Rect, same: int = 80):
+    if screen_sameness(context.screen(), pos) < same:
+        context.dbclick(pos.x(), pos.y())
+
+
+@myexecutor.command()
+def dbclick_has(context: myexecutor.Context, pos: Rect, same: int = 80):
+    maxValue, rect = screen_find(context.screen(), pos)
+    if maxValue >= same:
+        context.dbclick(rect.center().x(), rect.center().y())
+
+
+@myexecutor.command()
+def dbclick(context: myexecutor.Context, pos: Union[Point, Rect]):
+    context.dbclick(pos.x(), pos.y())
 
 
 @myexecutor.command()
@@ -168,29 +194,35 @@ def input(context: myexecutor.Context, text: str):
     context.input(text)
 
 
-def exec(device: Device, variables: dict, reader, main, refresh_callback=None, click_callback=None, touch_callback=None, print_fn=print, **kwargs) -> int:
+def exec(adb: ADB, variables: dict, reader, main, refresh_callback=None, click_callback=None, dbclick_callback=None, touch_callback=None, print_fn=print, **kwargs) -> int:
     _screen = None
 
     def click(x: int, y: int):
-        device.click(x, y)
+        adb.click(x, y)
         if click_callback is not None:
             click_callback(x, y)
 
+    def dbclick(x: int, y: int):
+        adb.dbclick(x, y)
+        if dbclick_callback is not None:
+            dbclick_callback(x, y)
+
     def touch(x1: int, y1: int, x2: int, y2: int):
-        device.touch(x1, y1, x2, y2)
+        adb.touch(x1, y1, x2, y2)
         if touch_callback is not None:
             touch_callback(x1, y1, x2, y2)
 
     def refresh():
         nonlocal _screen
-        _screen = device.screen()
+        _screen = adb.screen()
         if refresh_callback is not None:
             refresh_callback(_screen)
         return _screen
 
     context = myexecutor.Context(items=variables)
-    context.input = device.input
+    context.input = adb.input
     context.click = click
+    context.dbclick = dbclick
     context.touch = touch
     context.screen = lambda: _screen if _screen is not None else refresh()
     context.print = print_fn

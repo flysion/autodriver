@@ -7,7 +7,7 @@ from PySide6 import QtWidgets, QtGui, QtCore
 
 import executor
 from Counter import Counter
-from Device import Device
+from device import ADB
 from EditorTabView import EditorTabView
 from EditorTree import EditorTreeWidgetItemFile, EditorTreeWidgetItemFolder, EditorTreeWidgetItemNameChangeEvent
 from MainWindowUI import Ui_MainWindow
@@ -21,7 +21,7 @@ ScreenGraphicsItem = Union[ScreenGraphicsItemRect, ScreenGraphicsItemPoint]
 
 
 class MainWindow(QtWidgets.QMainWindow):
-    def __init__(self, device: Device, file=None):
+    def __init__(self, device: ADB, file=None):
         super(MainWindow, self).__init__()
 
         self._device = device
@@ -97,7 +97,8 @@ class MainWindow(QtWidgets.QMainWindow):
             return items
 
         data = dict(counter=dict(start=self._counter.start(), step=self._counter.step()), version=1,
-                    screenTreeItems=screenTreeItems, editorTreeItems=forEditorTreeItem())
+                    screenTreeItems=screenTreeItems, editorTreeItems=forEditorTreeItem(),
+                    splitterState=self.ui.splitter.saveState())
         return pickle.dumps(data)
 
     def unserializeData(self, data):
@@ -130,6 +131,8 @@ class MainWindow(QtWidgets.QMainWindow):
 
         forEditorTreeItem(data['editorTreeItems'])
         self.ui.editorTreeWidget.sortItems(0, QtCore.Qt.SortOrder.AscendingOrder)
+
+        self.ui.splitter.restoreState(data['splitterState'])
 
     def reset(self):
         self.ui.screenTabWidget.clear()

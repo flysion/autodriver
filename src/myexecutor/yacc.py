@@ -9,31 +9,45 @@ def p_error(t: LexToken):
 
 def p_start(p):
     """
-    start : comment
-          | command
-          | label
+    start : body
+          | newlines
+          | newlines body
+          | body newlines
+          | newlines body newlines
+          |
+    """
+    if len(p) >= 3 and p[2] is not None:
+        p[0] = p[2]
+    elif len(p) >= 2 and p[1] is not None:
+        p[0] = p[1]
+    else:
+        p[0] = []
+
+
+def p_body(p):
+    """
+    body : comment
+         | command
+         | label
     """
     p[0] = [p[1]]
 
 
-def p_start_1(p):
+def p_body_1(p):
     """
-    start : start newline comment
-          | start newline command
-          | start newline label
-          | start newline
+    body : body newlines comment
+         | body newlines command
+         | body newlines label
     """
-    if len(p) == 4:
-        p[0] = [*p[1], p[3]]
-    else:
-        p[0] = p[1]
+    p[0] = [*p[1], p[3]]
 
 
-def p_newline(p):
+def p_newlines(p):
     """
-    newline : iNEWLINE
-            | newline iNEWLINE
+    newlines : iNEWLINE
+             | newlines iNEWLINE
     """
+    p[0] = None
 
 
 def p_comment(p):
